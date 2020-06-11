@@ -91,12 +91,12 @@ export interface HasManyThroughRepository<
    * @returns A promise which resolves to the linked target model instance
    */
   link(
-    targetModelId: TargetID,
+    targetInstance: Target,
     options?: Options & {
       throughData?: DataObject<Through>;
       throughOptions?: Options;
     },
-  ): Promise<Target>;
+  ): Promise<void>;
 
   /**
    * Removes an association to an existing target model instance
@@ -105,7 +105,7 @@ export interface HasManyThroughRepository<
    * @returns A promise which resolves to null
    */
   unlink(
-    targetModelId: TargetID,
+    targetInstance: Target,
     options?: Options & {
       throughOptions?: Options;
     },
@@ -147,21 +147,11 @@ export class DefaultHasManyThroughRepository<
     },
   ): Promise<TargetEntity> {
     const targetRepository = await this.getTargetRepository();
-    const throughRepository = await this.getThroughRepository();
     const targetInstance = await targetRepository.create(
       targetModelData,
       options,
     );
-    const targetConstraint = this.getThroughFkConstraint(targetInstance);
-    const throughConstraint = this.getThroughConstraint();
-    const constraints = {...targetConstraint, ...throughConstraint};
-    await throughRepository.create(
-      constrainDataObject(
-        options?.throughData ?? {},
-        constraints as DataObject<ThroughEntity>,
-      ),
-      options?.throughOptions,
-    );
+    await this.link(targetInstance, options);
     return targetInstance;
   }
 
@@ -238,21 +228,38 @@ export class DefaultHasManyThroughRepository<
   }
 
   async link(
-    targetModelId: TargetID,
+    targetInstance: TargetEntity,
     options?: Options & {
       throughData?: DataObject<ThroughEntity>;
       throughOptions?: Options;
     },
-  ): Promise<TargetEntity> {
-    throw new Error('Method not implemented.');
+  ): Promise<void> {
+    const throughRepository = await this.getThroughRepository();
+    const throughConstraint = this.getThroughConstraint();
+    const targetConstraint = this.getThroughFkConstraint(targetInstance);
+    const constraints = {...targetConstraint, ...throughConstraint};
+    await throughRepository.create(
+      constrainDataObject(
+        options?.throughData ?? {},
+        constraints as DataObject<ThroughEntity>,
+      ),
+      options?.throughOptions,
+    );
   }
 
   async unlink(
-    targetModelId: TargetID,
+    targetInstance: TargetEntity,
     options?: Options & {
       throughOptions?: Options;
     },
   ): Promise<void> {
-    throw new Error('Method not implemented.');
+    const throughRepository = await this.getThroughRepository();
+    const throughConstraint = this.getThroughConstraint();
+    const targetConstraint = this.getThroughFkConstraint(targetInstance);
+    const constraints = {...targetConstraint, ...throughConstraint};
+    await throughRepository.deleteAll(
+      constrainDataObject({}, constraints as DataObject<ThroughEntity>),
+      options?.throughOptions,
+    );
   }
 }
