@@ -413,6 +413,32 @@ describe('HasManyThrough relation', () => {
       ]),
     );
   });
+
+  it('links a target instance to the source instance', async () => {
+    const item = await cartItemRepo.create({description: 'an item'});
+    let targets = await customerCartItemRepo.find();
+    expect(targets).to.deepEqual([]);
+
+    await customerCartItemRepo.link(item, {throughData: {id: 98}});
+    targets = await customerCartItemRepo.find();
+    expect(toJSON(targets)).to.containDeep(toJSON([item]));
+  });
+
+  it('unlinks a target instance from the source instance', async () => {
+    const item = await customerCartItemRepo.create(
+      {description: 'an item'},
+      {throughData: {id: 99}},
+    );
+    let targets = await customerCartItemRepo.find();
+    expect(toJSON(targets)).to.containDeep(toJSON([item]));
+
+    await customerCartItemRepo.unlink(item);
+    targets = await customerCartItemRepo.find();
+    expect(targets).to.deepEqual([]);
+    // the through model should be deleted
+    const thoughs = await customerCartItemRepo.find();
+    expect(thoughs).to.deepEqual([]);
+  });
   //--- HELPERS ---//
 
   async function givenPersistedCustomerInstance() {
