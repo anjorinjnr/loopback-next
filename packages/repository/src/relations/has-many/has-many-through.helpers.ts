@@ -12,7 +12,6 @@ import {
   HasManyDefinition,
   InvalidRelationError,
   isTypeResolver,
-  StringKeyOf,
 } from '../..';
 import {resolveHasManyMetaHelper} from './has-many.helpers';
 
@@ -68,21 +67,70 @@ export function createTargetConstraint<
   relationMeta: HasManyThroughResolvedDefinition,
   throughInstances: Through | Through[],
 ): DataObject<Target> {
+  const fkValues = createFkValues(relationMeta, throughInstances);
   const targetPrimaryKey = relationMeta.keyTo;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const constraint: any = {
+    [targetPrimaryKey]: Array.isArray(fkValues) ? {inq: fkValues} : fkValues,
+  };
+  return constraint;
+}
+
+/**
+ * Returns a target fk or an array of target fks of the given throughInstances.
+ *
+ * @param relationMeta
+ * @param throughInstances
+ *
+ * @example
+ * ```ts
+ * const resolvedMetadata = {
+ *  // .. other props
+ *  keyFrom: 'id',
+ *  keyTo: 'id',
+ *  through: {
+ *    model: () => CategoryProductLink,
+ *    keyFrom: 'categoryId',
+ *    keyTo: 'productId',
+ *  },
+ * };
+ * createFkValues(resolvedMetadata,{
+        id: 2,
+        categoryId: 2,
+        productId: 8,
+      });
+ * >>> 8
+* createFkValues(resolvedMetadata, [
+      {
+        id: 2,
+        categoryId: 2,
+        productId: 8,
+      }, {
+        id: 1,
+        categoryId: 2,
+        productId: 9,
+      }
+  ]);
+  >>> [8, 9]
+ */
+export function createFkValues<Through extends Entity, TargetID>(
+  relationMeta: HasManyThroughResolvedDefinition,
+  throughInstances: Through | Through[],
+): TargetID | TargetID[] {
   const targetFkName = relationMeta.through.keyTo;
   if (!Array.isArray(throughInstances)) {
     throughInstances = [throughInstances];
   }
-  let fkValues = throughInstances.map(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let fkValues: any = throughInstances.map(
     (throughInstance: Through) =>
       throughInstance[targetFkName as keyof Through],
   );
   fkValues = deduplicate(fkValues);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const constraint: any = {
-    [targetPrimaryKey]: fkValues.length === 1 ? fkValues[0] : {inq: fkValues},
-  };
-  return constraint;
+  return fkValues.length === 1
+    ? (fkValues[0] as TargetID)
+    : (fkValues as TargetID[]);
 }
 
 /**
@@ -123,7 +171,8 @@ export function createThroughConstraint<Through extends Entity, ForeignKeyType>(
  * Creates constraint used to create the through model
  *
  * @param relationMeta - resolved hasManyThrough metadata
- * @param targetInstance instance of target entity used to constrain through
+ * @param targetInstance instance of target entity or a value of the target key
+ * used to constrain through
  * @internal
  *
  * @example
@@ -138,24 +187,31 @@ export function createThroughConstraint<Through extends Entity, ForeignKeyType>(
  *    keyTo: 'productId',
  *  },
  * };
- * createThroughConstraint(resolvedMetadata, {id: 3, name: 'a product'});
+ * createThroughFkConstraint(resolvedMetadata, 3);
  *
- * >>> {productId: 1}
+ * >>> {productId: 3}
  *
- * createThroughConstraint(resolvedMetadata, {id: {inq:[3,4]}});
+ * createThroughFkConstraint(resolvedMetadata, [3,4]);
  *
  * >>> {productId: {inq:[3,4]}}
  */
-export function createThroughFkConstraint<Target, Through extends Entity>(
+export function createThroughFkConstraint<
+  Target,
+  Through extends Entity,
+  ForeignKeyType
+>(
   relationMeta: HasManyThroughResolvedDefinition,
-  targetInstance: Target,
+  fkValue: ForeignKeyType | ForeignKeyType[],
 ): DataObject<Through> {
-  const targetKey = relationMeta.keyTo as StringKeyOf<Target>;
+  if (fkValue === undefined) {
+    throw new Error('"targetInstance" cannot be undefined');
+  }
   const targetFkName = relationMeta.through.keyTo;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const constraint: any = {
-    [targetFkName]: targetInstance[targetKey],
-  };
+  const constraint: any = Array.isArray(fkValue)
+    ? {[targetFkName]: {inq: fkValue}}
+    : {[targetFkName]: fkValue};
   return constraint;
 }
 

@@ -2,7 +2,6 @@
 // Node module: @loopback/repository
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
-
 import {
   DataObject,
   Entity,
@@ -11,6 +10,7 @@ import {
   HasManyDefinition,
 } from '../..';
 import {
+  createFkValues,
   createTargetConstraint,
   createThroughConstraint,
   createThroughFkConstraint,
@@ -56,6 +56,11 @@ export function createHasManyThroughRepositoryFactory<
     ): DataObject<Target> {
       return createTargetConstraint<Target, Through>(meta, throughInstances);
     }
+    function getFkValues(
+      throughInstances: Through | Through[],
+    ): TargetID | TargetID[] {
+      return createFkValues(meta, throughInstances);
+    }
     function getThroughConstraint(): DataObject<Through> {
       const constriant: DataObject<Through> = createThroughConstraint<
         Through,
@@ -65,12 +70,13 @@ export function createHasManyThroughRepositoryFactory<
     }
 
     function getThroughFkConstraint(
-      targetInstance: Target,
+      fkValues: TargetID | TargetID[],
     ): DataObject<Through> {
       const constriant: DataObject<Through> = createThroughFkConstraint<
         Target,
-        Through
-      >(meta, targetInstance);
+        Through,
+        TargetID
+      >(meta, fkValues);
       return constriant;
     }
 
@@ -85,6 +91,7 @@ export function createHasManyThroughRepositoryFactory<
       targetRepositoryGetter,
       throughRepositoryGetter,
       getTargetContraint,
+      getFkValues,
       getThroughConstraint,
       getThroughFkConstraint,
     );

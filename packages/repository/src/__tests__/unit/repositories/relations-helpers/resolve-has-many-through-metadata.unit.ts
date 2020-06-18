@@ -13,6 +13,7 @@ import {
   RelationType,
 } from '../../../..';
 import {
+  createFkValues,
   createTargetConstraint,
   createThroughConstraint,
   createThroughFkConstraint,
@@ -26,6 +27,33 @@ describe('HasManyThroughHelpers', () => {
       const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
       const result = createThroughConstraint(resolved, 1);
       expect(result).to.containEql({categoryId: 1});
+    });
+  });
+  context('createFkValues', () => {
+    it('can return the target fk value of a given through instance', () => {
+      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
+      const through1 = createCategoryProductLink({
+        id: 1,
+        categoryId: 2,
+        productId: 9,
+      });
+      const result = createFkValues(resolved, through1);
+      expect(result).to.equal(9);
+    });
+    it('can return the target fk values of given through instances', () => {
+      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
+      const through1 = createCategoryProductLink({
+        id: 1,
+        categoryId: 2,
+        productId: 9,
+      });
+      const through2 = createCategoryProductLink({
+        id: 2,
+        categoryId: 2,
+        productId: 8,
+      });
+      const result = createFkValues(resolved, [through1, through2]);
+      expect(result).to.containDeep([9, 8]);
     });
   });
   context('createTargetConstraint', () => {
@@ -68,14 +96,24 @@ describe('HasManyThroughHelpers', () => {
     });
   });
   context('createThroughFkConstraint', () => {
-    it('can create constraint with a given target instance', () => {
-      const product = createProduct({
-        id: 1,
-      });
+    it('can create constraint with a given fk', () => {
       const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
 
-      const result = createThroughFkConstraint(resolved, product);
+      const result = createThroughFkConstraint(resolved, 1);
       expect(result).to.containEql({productId: 1});
+    });
+    it('can create constraint with given fks', () => {
+      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
+
+      const result = createThroughFkConstraint(resolved, [1, 2]);
+      expect(result).to.containEql({productId: {inq: [1, 2]}});
+    });
+    it('throws if targetInstance is undefined', () => {
+      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
+
+      expect(() => createThroughFkConstraint(resolved, undefined)).to.throw(
+        /"targetInstance" cannot be undefined/,
+      );
     });
   });
   context('resolveHasManyThroughMetadata', () => {
@@ -352,8 +390,5 @@ describe('HasManyThroughHelpers', () => {
 
   function createCategoryProductLink(properties: Partial<CategoryProductLink>) {
     return new CategoryProductLink(properties);
-  }
-  function createProduct(properties: Partial<Product>) {
-    return new Product(properties);
   }
 });
