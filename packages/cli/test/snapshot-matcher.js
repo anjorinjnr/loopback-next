@@ -17,15 +17,19 @@ move this file to a standalone package so that all Mocha users can use it.
 const chalk = require('chalk');
 const assert = require('assert');
 const path = require('path');
-const debug = require('debug')('loopback:cli:test');
+const debug = require('debug')('loopback:cli:test:snapshot-matcher');
+
+const root = process.cwd();
+const shouldUpdateSnapshots = process.env.UPDATE_SNAPSHOTS;
 
 // Cached states in the process for snapshots
-// key: snapshot director
-// value: state
+// key: snapshot directory (snapshotDir)
+// value: state {snapshotDir, currentTest, snapshots, snapshotErrors}
 const states = new Map();
 
+// Register root hooks for mocha
 const mochaHooks = {
-  // Register root hooks for mocha
+  // This global hook is called per test
   beforeEach: function injectCurrentTest() {
     const currentTest = this.currentTest;
     debug(
@@ -33,15 +37,17 @@ const mochaHooks = {
       process.pid,
       getFullTestName(currentTest),
     );
-    // This global hook is called per test
     for (const state of states.values()) {
       state.currentTest = currentTest;
       state.currentTest.__snapshotCounter = 1;
     }
   },
 
-  // This global hook is called after mocha is finished
+  // This global hook is called once, after mocha is finished
+  // When running tests in parallel, it is invoked once for each test file.
   afterAll: async function updateSnapshots() {
+    if (!shouldUpdateSnapshots) return;
+    debug('[%d] Updating snapshots', process.pid)
     for (const state of states.values()) {
       const tasks = Object.entries(state.snapshots).map(([f, data]) => {
         const snapshotFile = buildSnapshotFilePath(state.snapshotDir, f);
@@ -51,6 +57,8 @@ const mochaHooks = {
     }
   },
 
+  // This global hook is called once, before the test suite starts.
+  // When running tests in parallel, it is invoked once for each test file.
   beforeAll: () => {
     debug(
       '[%d] Resetting states for snapshots',
@@ -62,8 +70,6 @@ const mochaHooks = {
     }
   },
 };
-
-const root = process.cwd();
 
 module.exports = {
   initializeSnapshots,
@@ -120,7 +126,7 @@ function initializeSnapshots(snapshotDir) {
     states.set(snapshotDir, state);
   }
 
-  if (!process.env.UPDATE_SNAPSHOTS) {
+  if (!shouldUpdateSnapshots) {
     process.on('exit', function printSnapshotHelp() {
       if (!state.snapshotErrors) return;
       console.log(
