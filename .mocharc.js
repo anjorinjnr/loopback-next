@@ -3,14 +3,11 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-// Reuse the mocha config from `@loopback/cli`
-const config = require('./packages/cli/.mocharc.js');
+const {mergeMochaConfigs} = require('./packages/build');
+const defaultConfig = require('./packages/build/config/.mocharc.json');
 
-// Set max listeners to 16 for testing to avoid the following warning:
-// (node:11220) MaxListenersExceededWarning: Possible EventEmitter
-// memory leak detected. 11 SIGTERM listeners added to [process].
-// Use emitter.setMaxListeners() to increase limit
-// It only happens when multiple app instances are started but not stopped
-process.setMaxListeners(16);
-
-module.exports = config;
+module.exports = mergeMochaConfigs(
+  defaultConfig,
+  require('./packages/cli/.mocharc.js'),
+  // TODO: add Mocha configs for other packages
+);
