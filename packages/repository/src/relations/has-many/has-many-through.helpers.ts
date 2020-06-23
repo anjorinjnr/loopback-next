@@ -27,10 +27,9 @@ export type HasManyThroughResolvedDefinition = HasManyDefinition & {
 };
 
 /**
- * Creates constraint used to query target
+ * Creates target constraint based on through models
  * @param relationMeta - resolved hasManyThrough metadata
- * @param throughInstances - Instances of through entities used to constrain the target
- * @internal
+ * @param throughInstances - an array of through instances
  *
  * @example
  * ```ts
@@ -44,8 +43,13 @@ export type HasManyThroughResolvedDefinition = HasManyDefinition & {
  *    keyTo: 'productId',
  *  },
  * };
-
- * createTargetConstraint(resolvedMetadata, [
+ * createTargetConstraintOnThrough(resolvedMetadata,[{
+        id: 2,
+        categoryId: 2,
+        productId: 8,
+      }]);
+ * >>> {id: 8}
+ * createTargetConstraintOnThrough(resolvedMetadata, [
       {
         id: 2,
         categoryId: 2,
@@ -60,14 +64,14 @@ export type HasManyThroughResolvedDefinition = HasManyDefinition & {
   >>> {id: {inq: [9, 8]}}
  * ```
  */
-export function createTargetConstraint<
+export function createTargetConstraintOnThrough<
   Target extends Entity,
   Through extends Entity
 >(
   relationMeta: HasManyThroughResolvedDefinition,
-  throughInstances: Through | Through[],
+  throughInstances: Through[],
 ): DataObject<Target> {
-  const fkValues = createFkValues(relationMeta, throughInstances);
+  const fkValues = getTargetKeyFromThroughModel(relationMeta, throughInstances);
   const targetPrimaryKey = relationMeta.keyTo;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,8 +84,8 @@ export function createTargetConstraint<
 /**
  * Returns a target fk or an array of target fks of the given throughInstances.
  *
- * @param relationMeta
- * @param throughInstances
+ * @param relationMeta - resolved hasManyThrough metadata
+ * @param throughInstances - an array of through instances
  *
  * @example
  * ```ts
@@ -95,13 +99,13 @@ export function createTargetConstraint<
  *    keyTo: 'productId',
  *  },
  * };
- * createFkValues(resolvedMetadata,{
+ * getTargetKeyFromThroughModel(resolvedMetadata,[{
         id: 2,
         categoryId: 2,
         productId: 8,
-      });
+      }]);
  * >>> 8
-* createFkValues(resolvedMetadata, [
+ * getTargetKeyFromThroughModel(resolvedMetadata, [
       {
         id: 2,
         categoryId: 2,
@@ -114,31 +118,25 @@ export function createTargetConstraint<
   ]);
   >>> [8, 9]
  */
-export function createFkValues<Through extends Entity, TargetID>(
+export function getTargetKeyFromThroughModel<Through extends Entity, TargetID>(
   relationMeta: HasManyThroughResolvedDefinition,
-  throughInstances: Through | Through[],
-): TargetID | TargetID[] {
+  throughInstances: Through[],
+): TargetID {
   const targetFkName = relationMeta.through.keyTo;
-  if (!Array.isArray(throughInstances)) {
-    throughInstances = [throughInstances];
-  }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let fkValues: any = throughInstances.map(
     (throughInstance: Through) =>
       throughInstance[targetFkName as keyof Through],
   );
   fkValues = deduplicate(fkValues);
-  return fkValues.length === 1
-    ? (fkValues[0] as TargetID)
-    : (fkValues as TargetID[]);
+  return fkValues.length === 1 ? fkValues[0] : fkValues;
 }
 
 /**
- * Creates constraint used to query through model
+ * Creates through constraint based on the source key
  *
  * @param relationMeta - resolved hasManyThrough metadata
- * @param fkValue - Value of the foreign key of the source model used to constrain through
- * @param targetInstance - Instance of target entity used to constrain through
+ * @param fkValue - foreign key of the source instance
  * @internal
  *
  * @example
@@ -153,12 +151,15 @@ export function createFkValues<Through extends Entity, TargetID>(
  *    keyTo: 'productId',
  *  },
  * };
- * createThroughConstraint(resolvedMetadata, 1);
+ * createThroughConstraintOnSource(resolvedMetadata, 1);
  *
  * >>> {categoryId: 1}
  * ```
  */
-export function createThroughConstraint<Through extends Entity, ForeignKeyType>(
+export function createThroughConstraintOnSource<
+  Through extends Entity,
+  ForeignKeyType
+>(
   relationMeta: HasManyThroughResolvedDefinition,
   fkValue: ForeignKeyType,
 ): DataObject<Through> {
@@ -168,11 +169,10 @@ export function createThroughConstraint<Through extends Entity, ForeignKeyType>(
   return constraint;
 }
 /**
- * Creates constraint used to create the through model
+ * Creates through constraint based on the target foreign key
  *
  * @param relationMeta - resolved hasManyThrough metadata
- * @param targetInstance instance of target entity or a value of the target key
- * used to constrain through
+ * @param fkValue foreign key of the target instance
  * @internal
  *
  * @example
@@ -187,24 +187,24 @@ export function createThroughConstraint<Through extends Entity, ForeignKeyType>(
  *    keyTo: 'productId',
  *  },
  * };
- * createThroughFkConstraint(resolvedMetadata, 3);
+ * createThroughConstraintOnTarget(resolvedMetadata, 3);
  *
  * >>> {productId: 3}
  *
- * createThroughFkConstraint(resolvedMetadata, [3,4]);
+ * createThroughConstraintOnTarget(resolvedMetadata, [3,4]);
  *
  * >>> {productId: {inq:[3,4]}}
  */
-export function createThroughFkConstraint<
+export function createThroughConstraintOnTarget<
   Target,
   Through extends Entity,
   ForeignKeyType
 >(
   relationMeta: HasManyThroughResolvedDefinition,
-  fkValue: ForeignKeyType | ForeignKeyType[],
+  fkValue: ForeignKeyType,
 ): DataObject<Through> {
   if (fkValue === undefined) {
-    throw new Error('"targetInstance" cannot be undefined');
+    throw new Error('"fkValue" cannot be undefined');
   }
   const targetFkName = relationMeta.through.keyTo;
 
@@ -252,7 +252,7 @@ export function resolveHasManyThroughMetadata(
     relationMeta.keyTo &&
     targetModelProperties[relationMeta.keyTo]
   ) {
-    // The explict cast is needed because of a limitation of type inference
+    // The explicit cast is needed because of a limitation of type inference
     return relationMeta as HasManyThroughResolvedDefinition;
   }
 

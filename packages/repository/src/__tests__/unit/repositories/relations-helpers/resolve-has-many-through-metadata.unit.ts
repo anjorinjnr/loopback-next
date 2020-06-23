@@ -13,35 +13,32 @@ import {
   RelationType,
 } from '../../../..';
 import {
-  createFkValues,
-  createTargetConstraint,
-  createThroughConstraint,
-  createThroughFkConstraint,
+  createTargetConstraintOnThrough,
+  createThroughConstraintOnSource,
+  createThroughConstraintOnTarget,
+  getTargetKeyFromThroughModel,
   HasManyThroughResolvedDefinition,
   resolveHasManyThroughMetadata,
 } from '../../../../relations/has-many/has-many-through.helpers';
 
 describe('HasManyThroughHelpers', () => {
-  context('createThroughConstraint', () => {
+  context('createThroughConstraintOnSource', () => {
     it('can create constraint for searching through models', () => {
-      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
-      const result = createThroughConstraint(resolved, 1);
+      const result = createThroughConstraintOnSource(relationMetaData, 1);
       expect(result).to.containEql({categoryId: 1});
     });
   });
-  context('createFkValues', () => {
+  context('getTargetKeyFromThroughModel', () => {
     it('can return the target fk value of a given through instance', () => {
-      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
       const through1 = createCategoryProductLink({
         id: 1,
         categoryId: 2,
         productId: 9,
       });
-      const result = createFkValues(resolved, through1);
+      const result = getTargetKeyFromThroughModel(relationMetaData, [through1]);
       expect(result).to.equal(9);
     });
     it('can return the target fk values of given through instances', () => {
-      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
       const through1 = createCategoryProductLink({
         id: 1,
         categoryId: 2,
@@ -52,11 +49,14 @@ describe('HasManyThroughHelpers', () => {
         categoryId: 2,
         productId: 8,
       });
-      const result = createFkValues(resolved, [through1, through2]);
+      const result = getTargetKeyFromThroughModel(relationMetaData, [
+        through1,
+        through2,
+      ]);
       expect(result).to.containDeep([9, 8]);
     });
   });
-  context('createTargetConstraint', () => {
+  context('createTargetConstraintOnThrough', () => {
     it('can create constraint for searching target models', () => {
       const through1 = createCategoryProductLink({
         id: 1,
@@ -68,13 +68,17 @@ describe('HasManyThroughHelpers', () => {
         categoryId: 2,
         productId: 8,
       });
-      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
 
       // single through model
-      let result = createTargetConstraint(resolved, through1);
+      let result = createTargetConstraintOnThrough(relationMetaData, [
+        through1,
+      ]);
       expect(result).to.containEql({id: 9});
       // multiple through models
-      result = createTargetConstraint(resolved, [through1, through2]);
+      result = createTargetConstraintOnThrough(relationMetaData, [
+        through1,
+        through2,
+      ]);
       expect(result).to.containEql({id: {inq: [9, 8]}});
     });
 
@@ -89,31 +93,27 @@ describe('HasManyThroughHelpers', () => {
         categoryId: 3,
         productId: 9,
       });
-      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
 
-      const result = createTargetConstraint(resolved, [through1, through2]);
+      const result = createTargetConstraintOnThrough(relationMetaData, [
+        through1,
+        through2,
+      ]);
       expect(result).to.containEql({id: 9});
     });
   });
-  context('createThroughFkConstraint', () => {
+  context('createThroughConstraintOnTarget', () => {
     it('can create constraint with a given fk', () => {
-      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
-
-      const result = createThroughFkConstraint(resolved, 1);
+      const result = createThroughConstraintOnTarget(relationMetaData, 1);
       expect(result).to.containEql({productId: 1});
     });
     it('can create constraint with given fks', () => {
-      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
-
-      const result = createThroughFkConstraint(resolved, [1, 2]);
+      const result = createThroughConstraintOnTarget(relationMetaData, [1, 2]);
       expect(result).to.containEql({productId: {inq: [1, 2]}});
     });
-    it('throws if targetInstance is undefined', () => {
-      const resolved = resolvedMetadata as HasManyThroughResolvedDefinition;
-
-      expect(() => createThroughFkConstraint(resolved, undefined)).to.throw(
-        /"targetInstance" cannot be undefined/,
-      );
+    it('throws if fkValue is undefined', () => {
+      expect(() =>
+        createThroughConstraintOnTarget(relationMetaData, undefined),
+      ).to.throw(/"fkValue" cannot be undefined/);
     });
   });
   context('resolveHasManyThroughMetadata', () => {
@@ -187,7 +187,7 @@ describe('HasManyThroughHelpers', () => {
           metadata as HasManyDefinition,
         );
 
-        expect(meta).to.eql(resolvedMetadata);
+        expect(meta).to.eql(relationMetaData);
       });
 
       it('infers through.keyFrom if it is not provided', () => {
@@ -210,7 +210,7 @@ describe('HasManyThroughHelpers', () => {
           metadata as HasManyDefinition,
         );
 
-        expect(meta).to.eql(resolvedMetadata);
+        expect(meta).to.eql(relationMetaData);
       });
 
       it('infers through.keyTo if it is not provided', () => {
@@ -234,7 +234,7 @@ describe('HasManyThroughHelpers', () => {
           metadata as HasManyDefinition,
         );
 
-        expect(meta).to.eql(resolvedMetadata);
+        expect(meta).to.eql(relationMetaData);
       });
 
       it('throws if through.keyFrom is not provided in through', async () => {
@@ -283,7 +283,7 @@ describe('HasManyThroughHelpers', () => {
         );
       });
 
-      it('throws if the tarhet model does not have the id property', async () => {
+      it('throws if the target model does not have the id property', async () => {
         const metadata = {
           name: 'categories',
           type: RelationType.hasMany,
@@ -353,7 +353,7 @@ describe('HasManyThroughHelpers', () => {
     }
   }
 
-  const resolvedMetadata = {
+  const relationMetaData = {
     name: 'products',
     type: 'hasMany',
     targetsMany: true,
@@ -366,7 +366,7 @@ describe('HasManyThroughHelpers', () => {
       keyFrom: 'categoryId',
       keyTo: 'productId',
     },
-  };
+  } as HasManyThroughResolvedDefinition;
 
   class InvalidThrough extends Entity {}
   InvalidThrough.definition = new ModelDefinition('InvalidThrough')
