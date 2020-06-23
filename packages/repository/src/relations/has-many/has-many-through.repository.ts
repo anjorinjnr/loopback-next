@@ -130,15 +130,13 @@ export class DefaultHasManyThroughRepository<
   constructor(
     public getTargetRepository: Getter<TargetRepository>,
     public getThroughRepository: Getter<ThroughRepository>,
-    public getTargetConstraint: (
-      throughInstances: ThroughEntity | ThroughEntity[],
+    public getTargetConstraintOnThrough: (
+      throughInstances: ThroughEntity[],
     ) => DataObject<TargetEntity>,
-    public getFkValues: (
-      throughInstances: ThroughEntity | ThroughEntity[],
-    ) => TargetID | TargetID[],
-    public getThroughConstraint: () => DataObject<ThroughEntity>,
-    public getThroughFkConstraint: (
-      targetID: TargetID | TargetID[],
+    public getTargetKey: (throughInstances: ThroughEntity[]) => TargetID,
+    public getThroughConstraintOnSource: () => DataObject<ThroughEntity>,
+    public getThroughConstraintOnTarget: (
+      targetID: TargetID,
     ) => DataObject<ThroughEntity>,
   ) {}
 
@@ -166,12 +164,14 @@ export class DefaultHasManyThroughRepository<
   ): Promise<TargetEntity[]> {
     const targetRepository = await this.getTargetRepository();
     const throughRepository = await this.getThroughRepository();
-    const throughConstraint = this.getThroughConstraint();
+    const throughConstraint = this.getThroughConstraintOnSource();
     const throughInstances = await throughRepository.find(
       constrainFilter(undefined, throughConstraint),
       options?.throughOptions,
     );
-    const targetConstraint = this.getTargetConstraint(throughInstances);
+    const targetConstraint = this.getTargetConstraintOnThrough(
+      throughInstances,
+    );
     return targetRepository.find(
       constrainFilter(filter, targetConstraint),
       options,
@@ -186,20 +186,24 @@ export class DefaultHasManyThroughRepository<
   ): Promise<Count> {
     const targetRepository = await this.getTargetRepository();
     const throughRepository = await this.getThroughRepository();
-    const throughConstraint = this.getThroughConstraint();
+    const throughConstraint = this.getThroughConstraintOnSource();
     const throughInstances = await throughRepository.find(
       constrainFilter(undefined, throughConstraint),
       options?.throughOptions,
     );
-    const targetFkValues = this.getFkValues(throughInstances);
-    // delete throughs that have the targets that are going to be deleted
-    const throughFkConstraint = this.getThroughFkConstraint(targetFkValues);
+    const targetFkValues = this.getTargetKey(throughInstances);
+    // delete through instances that have the targets that are going to be deleted
+    const throughFkConstraint = this.getThroughConstraintOnTarget(
+      targetFkValues,
+    );
     await throughRepository.deleteAll(
       constrainWhereOr({}, [throughConstraint, throughFkConstraint]),
     );
 
     // delete target(s)
-    const targetConstraint = this.getTargetConstraint(throughInstances);
+    const targetConstraint = this.getTargetConstraintOnThrough(
+      throughInstances,
+    );
     return targetRepository.deleteAll(
       constrainWhere(where, targetConstraint as Where<TargetEntity>),
       options,
@@ -215,12 +219,14 @@ export class DefaultHasManyThroughRepository<
   ): Promise<Count> {
     const targetRepository = await this.getTargetRepository();
     const throughRepository = await this.getThroughRepository();
-    const throughConstraint = this.getThroughConstraint();
+    const throughConstraint = this.getThroughConstraintOnSource();
     const throughInstances = await throughRepository.find(
       constrainFilter(undefined, throughConstraint),
       options?.throughOptions,
     );
-    const targetConstraint = this.getTargetConstraint(throughInstances);
+    const targetConstraint = this.getTargetConstraintOnThrough(
+      throughInstances,
+    );
     return targetRepository.updateAll(
       constrainDataObject(dataObject, targetConstraint),
       constrainWhere(where, targetConstraint as Where<TargetEntity>),
@@ -236,8 +242,8 @@ export class DefaultHasManyThroughRepository<
     },
   ): Promise<void> {
     const throughRepository = await this.getThroughRepository();
-    const throughConstraint = this.getThroughConstraint();
-    const targetConstraint = this.getThroughFkConstraint(targetId);
+    const throughConstraint = this.getThroughConstraintOnSource();
+    const targetConstraint = this.getThroughConstraintOnTarget(targetId);
     const constraints = {...targetConstraint, ...throughConstraint};
     await throughRepository.create(
       constrainDataObject(
@@ -255,8 +261,8 @@ export class DefaultHasManyThroughRepository<
     },
   ): Promise<void> {
     const throughRepository = await this.getThroughRepository();
-    const throughConstraint = this.getThroughConstraint();
-    const targetConstraint = this.getThroughFkConstraint(targetId);
+    const throughConstraint = this.getThroughConstraintOnSource();
+    const targetConstraint = this.getThroughConstraintOnTarget(targetId);
     const constraints = {...targetConstraint, ...throughConstraint};
     await throughRepository.deleteAll(
       constrainDataObject({}, constraints as DataObject<ThroughEntity>),

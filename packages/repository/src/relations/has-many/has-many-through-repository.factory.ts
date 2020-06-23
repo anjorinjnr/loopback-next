@@ -10,10 +10,10 @@ import {
   HasManyDefinition,
 } from '../..';
 import {
-  createFkValues,
-  createTargetConstraint,
-  createThroughConstraint,
-  createThroughFkConstraint,
+  createTargetConstraintOnThrough,
+  createThroughConstraintOnSource,
+  createThroughConstraintOnTarget,
+  getTargetKeyFromThroughModel,
   resolveHasManyThroughMetadata,
 } from './has-many-through.helpers';
 import {
@@ -51,33 +51,34 @@ export function createHasManyThroughRepositoryFactory<
 ): HasManyThroughRepositoryFactory<Target, TargetID, Through, ForeignKeyType> {
   const meta = resolveHasManyThroughMetadata(relationMetadata);
   const result = function (fkValue: ForeignKeyType) {
-    function getTargetContraint(
-      throughInstances: Through | Through[],
+    function getTargetConstraintOnThrough(
+      throughInstances: Through[],
     ): DataObject<Target> {
-      return createTargetConstraint<Target, Through>(meta, throughInstances);
+      return createTargetConstraintOnThrough<Target, Through>(
+        meta,
+        throughInstances,
+      );
     }
-    function getFkValues(
-      throughInstances: Through | Through[],
-    ): TargetID | TargetID[] {
-      return createFkValues(meta, throughInstances);
+    function getTargetKey(throughInstances: Through[]): TargetID {
+      return getTargetKeyFromThroughModel(meta, throughInstances);
     }
-    function getThroughConstraint(): DataObject<Through> {
-      const constriant: DataObject<Through> = createThroughConstraint<
+    function getThroughConstraintOnSource(): DataObject<Through> {
+      const constraint: DataObject<Through> = createThroughConstraintOnSource<
         Through,
         ForeignKeyType
       >(meta, fkValue);
-      return constriant;
+      return constraint;
     }
 
-    function getThroughFkConstraint(
-      fkValues: TargetID | TargetID[],
+    function getThroughConstraintOnTarget(
+      fkValues: TargetID,
     ): DataObject<Through> {
-      const constriant: DataObject<Through> = createThroughFkConstraint<
+      const constraint: DataObject<Through> = createThroughConstraintOnTarget<
         Target,
         Through,
         TargetID
       >(meta, fkValues);
-      return constriant;
+      return constraint;
     }
 
     return new DefaultHasManyThroughRepository<
@@ -90,10 +91,10 @@ export function createHasManyThroughRepositoryFactory<
     >(
       targetRepositoryGetter,
       throughRepositoryGetter,
-      getTargetContraint,
-      getFkValues,
-      getThroughConstraint,
-      getThroughFkConstraint,
+      getTargetConstraintOnThrough,
+      getTargetKey,
+      getThroughConstraintOnSource,
+      getThroughConstraintOnTarget,
     );
   };
   return result;
