@@ -1,18 +1,41 @@
 {
   "ids": {
-    "Todo": 5,
-    "TodoList": 3
+    "Todo": 25,
+    "TodoList": 6
   },
   "models": {
     "Todo": {
       "1": "{\"title\":\"Take over the galaxy\",\"desc\":\"MWAHAHAHAHAHAHAHAHAHAHAHAHAMWAHAHAHAHAHAHAHAHAHAHAHAHA\",\"todoListId\":1,\"id\":1}",
       "2": "{\"title\":\"destroy alderaan\",\"desc\":\"Make sure there are no survivors left!\",\"todoListId\":1,\"id\":2}",
       "3": "{\"title\":\"play space invaders\",\"desc\":\"Become the very best!\",\"todoListId\":2,\"id\":3}",
-      "4": "{\"title\":\"crush rebel scum\",\"desc\":\"Every.Last.One.\",\"todoListId\":1,\"id\":4}"
+      "4": "{\"title\":\"crush rebel scum\",\"desc\":\"Every.Last.One.\",\"todoListId\":1,\"id\":4}",
+      "5": "{\"title\":\"todo 1\",\"updatedAt\":1593037870769,\"todoListId\":1,\"id\":5}",
+      "6": "{\"title\":\"todo 2\",\"updatedAt\":1593037871769,\"todoListId\":1,\"id\":6}",
+      "7": "{\"title\":\"todo 3\",\"updatedAt\":1593037872769,\"todoListId\":1,\"id\":7}",
+      "8": "{\"title\":\"todo 4\",\"updatedAt\":1593037873769,\"todoListId\":1,\"id\":8}",
+      "9": "{\"title\":\"todo 1\",\"updatedAt\":1593037874769,\"todoListId\":2,\"id\":9}",
+      "10": "{\"title\":\"todo 2\",\"updatedAt\":1593037875769,\"todoListId\":2,\"id\":10}",
+      "11": "{\"title\":\"todo 3\",\"updatedAt\":1593037876769,\"todoListId\":2,\"id\":11}",
+      "12": "{\"title\":\"todo 4\",\"updatedAt\":1593037877769,\"todoListId\":2,\"id\":12}",
+      "13": "{\"title\":\"todo 1\",\"updatedAt\":1593037878769,\"todoListId\":3,\"id\":13}",
+      "14": "{\"title\":\"todo 2\",\"updatedAt\":1593037879769,\"todoListId\":3,\"id\":14}",
+      "15": "{\"title\":\"todo 3\",\"updatedAt\":1593037880769,\"todoListId\":3,\"id\":15}",
+      "16": "{\"title\":\"todo 4\",\"updatedAt\":1593037881769,\"todoListId\":3,\"id\":16}",
+      "17": "{\"title\":\"todo 1\",\"updatedAt\":1593038246172,\"todoListId\":4,\"id\":17}",
+      "18": "{\"title\":\"todo 2\",\"updatedAt\":1593038247172,\"todoListId\":4,\"id\":18}",
+      "19": "{\"title\":\"todo 3\",\"updatedAt\":1593038248172,\"todoListId\":4,\"id\":19}",
+      "20": "{\"title\":\"todo 4\",\"updatedAt\":1593038249172,\"todoListId\":4,\"id\":20}",
+      "21": "{\"title\":\"todo 1\",\"updatedAt\":1593038250172,\"todoListId\":5,\"id\":21}",
+      "22": "{\"title\":\"todo 2\",\"updatedAt\":1593038251172,\"todoListId\":5,\"id\":22}",
+      "23": "{\"title\":\"todo 3\",\"updatedAt\":1593038252172,\"todoListId\":5,\"id\":23}",
+      "24": "{\"title\":\"todo 4\",\"updatedAt\":1593038253172,\"todoListId\":5,\"id\":24}"
     },
     "TodoList": {
       "1": "{\"title\":\"Sith lord's check list\",\"lastModified\":\"a long time ago\",\"id\":1}",
-      "2": "{\"title\":\"My daily chores\",\"lastModified\":\"2018-07-13\",\"id\":2}"
+      "2": "{\"title\":\"My daily chores\",\"lastModified\":\"2018-07-13\",\"id\":2}",
+      "3": "{\"title\":\"test-todo\",\"color\":\"red\",\"id\":3}",
+      "4": "{\"title\":\"test-todo 2\",\"color\":\"red\",\"id\":4}",
+      "5": "{\"title\":\"test-todo 3\",\"color\":\"red\",\"id\":5}"
     }
   }
 }

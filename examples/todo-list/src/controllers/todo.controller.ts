@@ -22,6 +22,31 @@ export class TodoController {
     @repository(TodoRepository) protected todoRepository: TodoRepository,
   ) {}
 
+  @post('/todos/dump', {
+    responses: {
+      '200': {
+        description: 'Todo model instance',
+        content: {'application/json': {schema: getModelSchemaRef(Todo)}},
+      },
+    },
+  })
+  async dump(): Promise<Array<Todo>> {
+    const listids = [4, 5];
+    const todos: Partial<Todo>[] = [];
+    let now = Date.now();
+    listids.forEach(id => {
+      for (let index = 0; index < 4; index++) {
+        todos.push({
+          title: `todo ${index + 1}`,
+          todoListId: id,
+          updatedAt: now,
+        });
+        now += 1000;
+      }
+    });
+
+    return this.todoRepository.createAll(todos);
+  }
   @post('/todos', {
     responses: {
       '200': {
@@ -34,7 +59,10 @@ export class TodoController {
     @requestBody({
       content: {
         'application/json': {
-          schema: getModelSchemaRef(Todo, {title: 'NewTodo', exclude: ['id']}),
+          schema: getModelSchemaRef(Todo, {
+            title: 'NewTodo',
+            exclude: ['id'],
+          }),
         },
       },
     })
@@ -135,7 +163,9 @@ export class TodoController {
     responses: {
       '200': {
         description: 'TodoList model instance',
-        content: {'application/json': {schema: getModelSchemaRef(TodoList)}},
+        content: {
+          'application/json': {schema: getModelSchemaRef(TodoList)},
+        },
       },
     },
   })

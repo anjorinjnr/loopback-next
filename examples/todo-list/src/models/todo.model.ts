@@ -27,6 +27,11 @@ export class Todo extends Entity {
   desc?: string;
 
   @property({
+    type: 'number',
+  })
+  updatedAt: number;
+
+  @property({
     type: 'boolean',
   })
   isComplete: boolean;
