@@ -133,10 +133,10 @@ export class DefaultHasManyThroughRepository<
     public getTargetConstraintOnThrough: (
       throughInstances: ThroughEntity[],
     ) => DataObject<TargetEntity>,
-    public getTargetKey: (throughInstances: ThroughEntity[]) => TargetID,
+    public getTargetKey: (throughInstances: ThroughEntity[]) => TargetID[],
     public getThroughConstraintOnSource: () => DataObject<ThroughEntity>,
     public getThroughConstraintOnTarget: (
-      targetID: TargetID,
+      targetID: TargetID[],
     ) => DataObject<ThroughEntity>,
   ) {}
 
@@ -243,7 +243,7 @@ export class DefaultHasManyThroughRepository<
   ): Promise<void> {
     const throughRepository = await this.getThroughRepository();
     const throughConstraint = this.getThroughConstraintOnSource();
-    const targetConstraint = this.getThroughConstraintOnTarget(targetId);
+    const targetConstraint = this.getThroughConstraintOnTarget([targetId]);
     const constraints = {...targetConstraint, ...throughConstraint};
     await throughRepository.create(
       constrainDataObject(
@@ -262,7 +262,7 @@ export class DefaultHasManyThroughRepository<
   ): Promise<void> {
     const throughRepository = await this.getThroughRepository();
     const throughConstraint = this.getThroughConstraintOnSource();
-    const targetConstraint = this.getThroughConstraintOnTarget(targetId);
+    const targetConstraint = this.getThroughConstraintOnTarget([targetId]);
     const constraints = {...targetConstraint, ...throughConstraint};
     await throughRepository.deleteAll(
       constrainDataObject({}, constraints as DataObject<ThroughEntity>),

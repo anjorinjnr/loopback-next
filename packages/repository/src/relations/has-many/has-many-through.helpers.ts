@@ -76,7 +76,7 @@ export function createTargetConstraintOnThrough<
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const constraint: any = {
-    [targetPrimaryKey]: Array.isArray(fkValues) ? {inq: fkValues} : fkValues,
+    [targetPrimaryKey]: fkValues.length === 1 ? fkValues[0] : {inq: fkValues},
   };
   return constraint;
 }
@@ -121,7 +121,7 @@ export function createTargetConstraintOnThrough<
 export function getTargetKeyFromThroughModel<Through extends Entity, TargetID>(
   relationMeta: HasManyThroughResolvedDefinition,
   throughInstances: Through[],
-): TargetID {
+): TargetID[] {
   const targetFkName = relationMeta.through.keyTo;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let fkValues: any = throughInstances.map(
@@ -129,7 +129,7 @@ export function getTargetKeyFromThroughModel<Through extends Entity, TargetID>(
       throughInstance[targetFkName as keyof Through],
   );
   fkValues = deduplicate(fkValues);
-  return fkValues.length === 1 ? fkValues[0] : fkValues;
+  return fkValues as TargetID[];
 }
 
 /**
@@ -201,18 +201,20 @@ export function createThroughConstraintOnTarget<
   ForeignKeyType
 >(
   relationMeta: HasManyThroughResolvedDefinition,
-  fkValue: ForeignKeyType,
+  fkValue: ForeignKeyType[],
 ): DataObject<Through> {
-  if (fkValue === undefined) {
-    throw new Error('"fkValue" cannot be undefined');
+  if (fkValue === undefined || fkValue.length === 0) {
+    throw new Error('"fkValue" must be provided');
   }
   const targetFkName = relationMeta.through.keyTo;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const constraint: any = Array.isArray(fkValue)
-    ? {[targetFkName]: {inq: fkValue}}
-    : {[targetFkName]: fkValue};
-  return constraint;
+  const constraint: any =
+    fkValue.length === 1
+      ? {[targetFkName]: fkValue[0]}
+      : {[targetFkName]: {inq: fkValue}};
+
+  return constraint as DataObject<Through>;
 }
 
 /**

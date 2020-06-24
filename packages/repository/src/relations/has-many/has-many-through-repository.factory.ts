@@ -59,7 +59,7 @@ export function createHasManyThroughRepositoryFactory<
         throughInstances,
       );
     }
-    function getTargetKey(throughInstances: Through[]): TargetID {
+    function getTargetKey(throughInstances: Through[]): TargetID[] {
       return getTargetKeyFromThroughModel(meta, throughInstances);
     }
     function getThroughConstraintOnSource(): DataObject<Through> {
@@ -71,7 +71,7 @@ export function createHasManyThroughRepositoryFactory<
     }
 
     function getThroughConstraintOnTarget(
-      fkValues: TargetID,
+      fkValues: TargetID[],
     ): DataObject<Through> {
       const constraint: DataObject<Through> = createThroughConstraintOnTarget<
         Target,

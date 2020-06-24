@@ -36,7 +36,7 @@ describe('HasManyThroughHelpers', () => {
         productId: 9,
       });
       const result = getTargetKeyFromThroughModel(relationMetaData, [through1]);
-      expect(result).to.equal(9);
+      expect(result).to.deepEqual([9]);
     });
     it('can return the target fk values of given through instances', () => {
       const through1 = createCategoryProductLink({
@@ -103,7 +103,7 @@ describe('HasManyThroughHelpers', () => {
   });
   context('createThroughConstraintOnTarget', () => {
     it('can create constraint with a given fk', () => {
-      const result = createThroughConstraintOnTarget(relationMetaData, 1);
+      const result = createThroughConstraintOnTarget(relationMetaData, [1]);
       expect(result).to.containEql({productId: 1});
     });
     it('can create constraint with given fks', () => {
@@ -112,8 +112,8 @@ describe('HasManyThroughHelpers', () => {
     });
     it('throws if fkValue is undefined', () => {
       expect(() =>
-        createThroughConstraintOnTarget(relationMetaData, undefined),
-      ).to.throw(/"fkValue" cannot be undefined/);
+        createThroughConstraintOnTarget(relationMetaData, []),
+      ).to.throw(/"fkValue" must be provided/);
     });
   });
   context('resolveHasManyThroughMetadata', () => {
