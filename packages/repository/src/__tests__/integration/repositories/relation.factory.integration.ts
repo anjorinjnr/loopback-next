@@ -30,7 +30,7 @@ let db: juggler.DataSource;
 let customerRepo: EntityCrudRepository<Customer, typeof Customer.prototype.id>;
 let orderRepo: EntityCrudRepository<Order, typeof Order.prototype.id>;
 let cartItemRepo: EntityCrudRepository<CartItem, typeof CartItem.prototype.id>;
-let CustomerCartItemLinkRepo: EntityCrudRepository<
+let customerCartItemLinkRepo: EntityCrudRepository<
   CustomerCartItemLink,
   typeof CustomerCartItemLink.prototype.id
 >;
@@ -232,7 +232,7 @@ describe('HasManyThrough relation', () => {
 
   beforeEach(async function resetDatabase() {
     await customerRepo.deleteAll();
-    await CustomerCartItemLinkRepo.deleteAll();
+    await customerCartItemLinkRepo.deleteAll();
     await cartItemRepo.deleteAll();
   });
 
@@ -241,7 +241,7 @@ describe('HasManyThrough relation', () => {
       description: 'an item hasManyThrough',
     });
     const persistedItem = await cartItemRepo.findById(cartItem.id);
-    const persistedLink = await CustomerCartItemLinkRepo.find();
+    const persistedLink = await customerCartItemLinkRepo.find();
 
     expect(cartItem).to.deepEqual(persistedItem);
     expect(persistedLink).have.length(1);
@@ -292,14 +292,14 @@ describe('HasManyThrough relation', () => {
       description: 'customer 2',
     });
     let items = await cartItemRepo.find();
-    let links = await CustomerCartItemLinkRepo.find();
+    let links = await customerCartItemLinkRepo.find();
 
     expect(items).have.length(2);
     expect(links).have.length(2);
 
     await customerCartItemRepo.delete();
     items = await cartItemRepo.find();
-    links = await CustomerCartItemLinkRepo.find();
+    links = await customerCartItemLinkRepo.find();
 
     expect(items).have.length(1);
     expect(links).have.length(1);
@@ -319,13 +319,13 @@ describe('HasManyThrough relation', () => {
       description: 'customer 2',
     });
     // when order1 gets deleted, this through instance should be deleted too.
-    const through = await CustomerCartItemLinkRepo.create({
+    const through = await customerCartItemLinkRepo.create({
       id: 1,
       customerId: existingCustomerId + 1,
       itemId: item1.id,
     });
     let items = await cartItemRepo.find();
-    let links = await CustomerCartItemLinkRepo.find();
+    let links = await customerCartItemLinkRepo.find();
 
     expect(items).have.length(2);
     expect(links).have.length(3);
@@ -333,7 +333,7 @@ describe('HasManyThrough relation', () => {
     await customerCartItemRepo.delete();
 
     items = await cartItemRepo.find();
-    links = await CustomerCartItemLinkRepo.find();
+    links = await customerCartItemLinkRepo.find();
 
     expect(items).have.length(1);
     expect(links).have.length(1);
@@ -370,7 +370,7 @@ describe('HasManyThrough relation', () => {
     await customerCartItemRepo.link(item.id);
     targets = await customerCartItemRepo.find();
     expect(toJSON(targets)).to.containDeep(toJSON([item]));
-    const link = await CustomerCartItemLinkRepo.find();
+    const link = await customerCartItemLinkRepo.find();
     expect(toJSON(link[0])).to.containEql(
       toJSON({customerId: existingCustomerId, itemId: item.id}),
     );
@@ -384,7 +384,7 @@ describe('HasManyThrough relation', () => {
     });
     const targets = await customerCartItemRepo.find();
     expect(toJSON(targets)).to.containDeep(toJSON([item]));
-    const link = await CustomerCartItemLinkRepo.find();
+    const link = await customerCartItemLinkRepo.find();
     expect(toJSON(link[0])).to.containEql(
       toJSON({
         customerId: existingCustomerId,
@@ -436,7 +436,7 @@ describe('HasManyThrough relation', () => {
         },
       } as HasManyDefinition,
       Getter.fromValue(cartItemRepo),
-      Getter.fromValue(CustomerCartItemLinkRepo),
+      Getter.fromValue(customerCartItemLinkRepo),
     );
 
     customerCartItemRepo = customerCartItemFactory(existingCustomerId);
@@ -543,7 +543,7 @@ function givenCrudRepositories() {
   customerRepo = new DefaultCrudRepository(Customer, db);
   orderRepo = new DefaultCrudRepository(Order, db);
   cartItemRepo = new DefaultCrudRepository(CartItem, db);
-  CustomerCartItemLinkRepo = new DefaultCrudRepository(
+  customerCartItemLinkRepo = new DefaultCrudRepository(
     CustomerCartItemLink,
     db,
   );
